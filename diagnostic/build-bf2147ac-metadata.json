@@ -1,0 +1,75 @@
+{
+  "generated_at": "2026-06-16T15:21:59.009156+00:00",
+  "commit": "bf2147ac",
+  "diagnostic_logd": "diagnostic/build-bf2147ac.logd",
+  "chunked": false,
+  "chunk_size_bytes": null,
+  "password": "aa0df7917b59f74437ba",
+  "decrypt_command": "encryptly unpack diagnostic/build-bf2147ac.logd <outdir> --password aa0df7917b59f74437ba",
+  "total_modules": 10,
+  "passed": 5,
+  "failed": 5,
+  "modules": [
+    {
+      "name": "backend",
+      "status": "FAIL",
+      "elapsed_seconds": 49.462,
+      "artifact": null
+    },
+    {
+      "name": "frontend",
+      "status": "PASS",
+      "elapsed_seconds": 16.178,
+      "artifact": "/root/projects/tentoftrials-check-1781622875/frontend/dist"
+    },
+    {
+      "name": "market",
+      "status": "FAIL",
+      "elapsed_seconds": 1.206,
+      "artifact": null
+    },
+    {
+      "name": "frailbox",
+      "status": "FAIL",
+      "elapsed_seconds": 0.204,
+      "artifact": null
+    },
+    {
+      "name": "engine",
+      "status": "FAIL",
+      "elapsed_seconds": 2.155,
+      "artifact": null
+    },
+    {
+      "name": "compliance",
+      "status": "PASS",
+      "elapsed_seconds": 3.405,
+      "artifact": "/root/projects/tentoftrials-check-1781622875/compliance/build"
+    },
+    {
+      "name": "v2-market-stream",
+      "status": "PASS",
+      "elapsed_seconds": 0.058,
+      "artifact": null
+    },
+    {
+      "name": "nfc-scanner",
+      "status": "PASS",
+      "elapsed_seconds": 0.009,
+      "artifact": null
+    },
+    {
+      "name": "openapi-haskell",
+      "status": "FAIL",
+      "elapsed_seconds": 2.798,
+      "artifact": null
+    },
+    {
+      "name": "openapi-tools",
+      "status": "PASS",
+      "elapsed_seconds": 0.011,
+      "artifact": null
+    }
+  ],
+  "pr_note": "Include this metadata and diagnostic/build-bf2147ac.logd in your PR. Maintainers may ask you to remove these diagnostic artifacts before merging."
+}
