@@ -11,6 +11,10 @@
 #include "arena.h"
 #include "sandbox.h"
 
+#ifdef USE_BUDDY_ALLOCATOR
+#include "buddy.h"
+#endif
+
 #define VERSION "0.1.0"
 #define DEFAULT_REGION_SIZE (1024 * 1024 * 64)
 
@@ -126,11 +130,19 @@ int main(int argc, char *argv[]) {
 
     print_banner();
 
+#ifdef USE_BUDDY_ALLOCATOR
+    buddy_t *buddy = buddy_create(DEFAULT_REGION_SIZE);
+    if (!buddy) {
+        fprintf(stderr, "failed to create buddy allocator\n");
+        return 1;
+    }
+#else
     arena_t *arena = arena_create(DEFAULT_REGION_SIZE, ARENA_ZERO_INIT);
     if (!arena) {
         fprintf(stderr, "failed to create arena allocator\n");
         return 1;
     }
+#endif
 
     sandbox_config_t config;
     memset(&config, 0, sizeof(config));
@@ -166,7 +178,11 @@ int main(int argc, char *argv[]) {
     sandbox_t *sandbox = sandbox_create(&config);
     if (!sandbox) {
         fprintf(stderr, "failed to create sandbox\n");
+#ifdef USE_BUDDY_ALLOCATOR
+        buddy_destroy(buddy);
+#else
         arena_destroy(arena);
+#endif
         return 1;
     }
 
@@ -174,6 +190,32 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "warning: sandbox_apply failed: %s\n", strerror(errno));
     }
 
+#ifdef USE_BUDDY_ALLOCATOR
+    void *ptr1 = buddy_alloc(buddy, 1024);
+    void *ptr2 = buddy_alloc(buddy, 4096);
+    void *ptr3 = buddy_alloc(buddy, 2048);
+
+    buddy_stats_t bstats = buddy_stats(buddy);
+
+    if (verbose) {
+        fprintf(stdout, "Buddy Allocator Statistics:\n");
+        fprintf(stdout, "  total capacity:      %lu bytes\n",
+                (unsigned long)bstats.total);
+        fprintf(stdout, "  used:                %lu bytes\n",
+                (unsigned long)bstats.used);
+        fprintf(stdout, "  free:                %lu bytes\n",
+                (unsigned long)bstats.free);
+        fprintf(stdout, "  fragmented_bytes:    %lu bytes\n",
+                (unsigned long)bstats.fragmented_bytes);
+        fprintf(stdout, "  allocation_count:    %lu\n",
+                (unsigned long)bstats.allocation_count);
+        fprintf(stdout, "  free_count:          %lu\n",
+                (unsigned long)bstats.free_count);
+        fprintf(stdout, "  fragmentation_ratio: %.4f\n",
+                bstats.fragmentation_ratio);
+        fprintf(stdout, "\n");
+    }
+#else
     void *ptr1 = arena_alloc(arena, 1024);
     void *ptr2 = arena_alloc_aligned(arena, 4096, 4096);
     void *ptr3 = arena_calloc(arena, 1, 2048);
@@ -194,15 +236,22 @@ int main(int argc, char *argv[]) {
                 (unsigned long)stats.region_count);
         fprintf(stdout, "\n");
     }
+#endif
 
     fprintf(stdout, "frailbox: sandbox %s initialized [type=%d, mem=%luMB]\n",
             sandbox_is_active(sandbox) ? "ACTIVE" : "PASSIVE",
             sandbox->config.type,
             (unsigned long)(sandbox->config.memory_limit_bytes / (1024 * 1024)));
 
+#ifdef USE_BUDDY_ALLOCATOR
+    fprintf(stdout, "frailbox: buddy allocator running [total=%lu, used=%lu bytes]\n",
+            (unsigned long)bstats.total,
+            (unsigned long)bstats.used);
+#else
     fprintf(stdout, "frailbox: arena allocator running [regions=%lu, used=%lu bytes]\n",
             (unsigned long)stats.region_count,
             (unsigned long)stats.current_usage);
+#endif
 
     fprintf(stdout, "frailbox: entering main loop (press Ctrl+C to exit)\n");
 
@@ -214,7 +263,15 @@ int main(int argc, char *argv[]) {
     fprintf(stdout, "\nfrailbox: shutting down...\n");
 
     sandbox_destroy(sandbox);
+
+#ifdef USE_BUDDY_ALLOCATOR
+    buddy_free(buddy, ptr1);
+    buddy_free(buddy, ptr2);
+    buddy_free(buddy, ptr3);
+    buddy_destroy(buddy);
+#else
     arena_destroy(arena);
+#endif
 
     fprintf(stdout, "frailbox: shutdown complete\n");
 
