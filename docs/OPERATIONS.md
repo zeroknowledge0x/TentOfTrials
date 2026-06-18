@@ -310,3 +310,30 @@ Audit logs are retained for 365 days and include:
 2. Update Kubernetes secret: `kubectl create secret tls tot-tls --cert=new.crt --key=new.key -n tent-production --dry-run=client -o yaml | kubectl apply -f -`
 3. Restart services: `kubectl rollout restart deployment -n tent-production`
 4. Verify new certificate: `openssl s_client -connect api.example.com:443 -servername api.example.com`
+
+## Environment Variables
+
+The backend supports runtime configuration through environment variables.
+These override or supplement the TOML config file and CLI flags.
+
+| Variable | Type | Default | Description |
+|---|---|---|---|
+| `TOT_BACKEND_HOST` | String | `0.0.0.0` | Bind address for the backend server |
+| `TOT_BACKEND_PORT` | u16 | `8080` | Port for the backend server (1-65535) |
+| `TOT_LOG_LEVEL` | String | `info` | Log level: trace, debug, info, warn, error |
+| `TOT_ENABLE_EXPERIMENTAL` | bool | `false` | Enable experimental features (true/false/1/0) |
+
+### Usage
+
+```bash
+export TOT_BACKEND_HOST=127.0.0.1
+export TOT_BACKEND_PORT=9090
+export TOT_LOG_LEVEL=debug
+export TOT_ENABLE_EXPERIMENTAL=true
+./tent-backend
+```
+
+### Error Handling
+
+- Invalid port (non-numeric or >65535): returns `ConfigError::InvalidPort`
+- Invalid boolean (not true/false/1/0): returns `ConfigError::InvalidBoolean`

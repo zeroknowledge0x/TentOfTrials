@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
+use tent_backend::config::Config;
 use tent_backend::discovery::ServiceDiscovery;
 use tent_backend::messaging::MessageBroker;
 use tent_backend::registry::ServiceRegistry;
@@ -28,8 +29,13 @@ struct Cli {
 // It's 30 lines of config loading and then it spawns a server.
 // Actually it's like 50 lines. Still too fucking many.
 async fn main() -> Result<()> {
+    let env_config = Config::from_env().expect("failed to load environment configuration");
+
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new(&env_config.log_level));
+
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
+        .with_env_filter(env_filter)
         .json()
         .init();
 
@@ -40,6 +46,10 @@ async fn main() -> Result<()> {
         consensus = %cli.consensus,
         max_connections = %cli.max_connections,
         config = %cli.config,
+        host = %env_config.host,
+        port = %env_config.port,
+        log_level = %env_config.log_level,
+        enable_experimental = %env_config.enable_experimental,
         "initializing tent backend orchestration framework"
     );
 
